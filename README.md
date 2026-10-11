@@ -65,7 +65,9 @@ The key is sent only in the server-side `X-Api-Key` header to `https://hackathon
 - Streamable HTTP MCP tool: implemented and covered by an in-process protocol test.
 - Live-key contract verification: pending key issuance.
 - Devpost registration: completed on October 11, 2026.
-- Public repository, hosted demo, and submission: not completed.
+- Public MIT repository: https://github.com/sidsri14/qloo-relocate-right
+- GitHub Actions: tests, strict typecheck, and production build pass on Node.js 22 and 24.
+- Hosted live-Qloo demo and submission: not completed.
 
 ## License
 
