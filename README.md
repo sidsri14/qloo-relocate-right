@@ -4,7 +4,11 @@ RelocateRight is an agentic relocation decision tool for remote-job candidates. 
 
 The Qloo adapter has been contract-verified against the official hackathon host. `QLOO_USE_MOCK=true` remains available only for local interface and workflow testing. Mock scores are labeled as fixtures in both the API response and UI and must not be used as Qloo evidence in a submission.
 
-![RelocateRight running with clearly labeled mock fixtures](./relocate-right-mock.png)
+![RelocateRight ranking Berlin, Lisbon, and Toronto with live Qloo data](./qloo-relocate-right-live.png)
+
+The screenshot above was captured from the hosted application after a successful
+live Qloo request. The `QLOO DATA` label distinguishes API-backed results from
+the clearly labeled local mock fixtures used in tests.
 
 ## Architecture
 
