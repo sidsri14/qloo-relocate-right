@@ -81,8 +81,9 @@ workflow trace. It never prints the key or writes the Qloo response to disk.
 - Live-key contract verification: passed on October 14, 2026 against `/search` and `/v2/insights`.
 - Devpost registration: completed on October 11, 2026.
 - Public MIT repository: https://github.com/sidsri14/qloo-relocate-right
+- Hosted live-Qloo demo: https://qloo-relocate-right.vercel.app/
 - GitHub Actions: tests, strict typecheck, and production build pass on Node.js 22 and 24.
-- Hosted live-Qloo demo and submission: not completed.
+- Devpost submission: not completed.
 
 ## License
 
