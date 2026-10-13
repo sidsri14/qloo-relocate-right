@@ -31,6 +31,9 @@ Qloo /search   Qloo /v2/insights
 4. Rank only the resolved candidate IDs through one `GET /v2/insights` request using `filter.type=urn:entity:destination`, `filter.results.entities`, and `signal.interests.entities`.
 5. Return the Qloo ordering, available affinity evidence, and an explicit workflow trace.
 
+The adapter spaces outbound calls below the hackathon API's five-request-per-second
+limit and performs at most two bounded retries when Qloo returns `429`.
+
 An agent client can call the bounded `rank_relocation_shortlist` MCP tool with the same 1-5 interest and 2-5 city limits. The tool explicitly excludes visas, employment eligibility, safety, salary, and cost of living from its result.
 
 The agent does not infer visas, work authorization, salary, safety, or cost of living. Those are separate decision dimensions that need authoritative sources.

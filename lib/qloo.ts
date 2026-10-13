@@ -1,8 +1,15 @@
 import type { CandidateRanking, EntityRef, TasteGraph } from "./relocation";
 
 const DEFAULT_BASE_URL = "https://hackathon.api.qloo.com";
+const DEFAULT_REQUEST_SPACING_MS = 225;
+const MAX_RATE_LIMIT_RETRIES = 2;
+const MAX_RETRY_DELAY_MS = 2_000;
 
 type UnknownRecord = Record<string, unknown>;
+type Sleep = (milliseconds: number) => Promise<void>;
+
+const sleep: Sleep = (milliseconds) =>
+  new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 function isRecord(value: unknown): value is UnknownRecord {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -139,29 +146,64 @@ function explainabilityReasons(
 
 export class QlooTasteGraph implements TasteGraph {
   readonly source = "qloo" as const;
+  private requestQueue: Promise<void> = Promise.resolve();
+  private lastRequestStartedAt = 0;
 
   constructor(
     private readonly apiKey: string,
     private readonly baseUrl = DEFAULT_BASE_URL,
     private readonly fetcher: typeof fetch = fetch,
+    private readonly requestSpacingMs = DEFAULT_REQUEST_SPACING_MS,
+    private readonly sleeper: Sleep = sleep,
   ) {
     if (!apiKey.trim()) throw new Error("QLOO_API_KEY is required");
+  }
+
+  private async waitForRequestSlot(): Promise<void> {
+    const scheduled = this.requestQueue.then(async () => {
+      const delay = Math.max(
+        0,
+        this.lastRequestStartedAt + this.requestSpacingMs - Date.now(),
+      );
+      if (delay > 0) await this.sleeper(delay);
+      this.lastRequestStartedAt = Date.now();
+    });
+
+    this.requestQueue = scheduled.catch(() => undefined);
+    await scheduled;
+  }
+
+  private retryDelay(response: Response, attempt: number): number {
+    const resetSeconds = asNumber(response.headers.get("X-Second-RateLimit-Reset"));
+    const retryAfterSeconds = asNumber(response.headers.get("Retry-After"));
+    const seconds = resetSeconds ?? retryAfterSeconds ?? attempt + 1;
+    return Math.min(MAX_RETRY_DELAY_MS, Math.max(250, Math.ceil(seconds * 1_000)));
   }
 
   private async get(path: string, params: URLSearchParams): Promise<unknown> {
     const url = new URL(path, this.baseUrl);
     url.search = params.toString();
-    const response = await this.fetcher(url, {
-      headers: { "X-Api-Key": this.apiKey },
-      signal: AbortSignal.timeout(10_000),
-      cache: "no-store",
-    });
 
-    if (!response.ok) {
-      const detail = (await response.text()).slice(0, 240);
-      throw new Error(`Qloo request failed (${response.status}): ${detail}`);
+    for (let attempt = 0; attempt <= MAX_RATE_LIMIT_RETRIES; attempt += 1) {
+      await this.waitForRequestSlot();
+      const response = await this.fetcher(url, {
+        headers: { "X-Api-Key": this.apiKey },
+        signal: AbortSignal.timeout(10_000),
+        cache: "no-store",
+      });
+
+      if (response.status === 429 && attempt < MAX_RATE_LIMIT_RETRIES) {
+        await this.sleeper(this.retryDelay(response, attempt));
+        continue;
+      }
+      if (!response.ok) {
+        const detail = (await response.text()).slice(0, 240);
+        throw new Error(`Qloo request failed (${response.status}): ${detail}`);
+      }
+      return response.json();
     }
-    return response.json();
+
+    throw new Error("Qloo request failed after bounded rate-limit retries");
   }
 
   private async search(name: string, type?: string): Promise<EntityRef | null> {

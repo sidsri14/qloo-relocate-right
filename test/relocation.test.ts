@@ -142,6 +142,7 @@ test("Qloo adapter parses current search and insights response shapes", async ()
     "server-only-test-key",
     "https://hackathon.api.qloo.com",
     fetcher,
+    0,
   );
   const result = await runRelocationWorkflow(
     graph,
@@ -155,6 +156,42 @@ test("Qloo adapter parses current search and insights response shapes", async ()
   assert.equal(requests.length, 4);
   assert.ok(requests.every((request) => request.apiKey === "server-only-test-key"));
   assert.ok(requests.every((request) => !request.url.includes("server-only-test-key")));
+});
+
+test("Qloo adapter retries a second-rate-limit response once", async () => {
+  let requestCount = 0;
+  const delays: number[] = [];
+  const fetcher: typeof fetch = async () => {
+    requestCount += 1;
+    if (requestCount === 1) {
+      return Response.json(
+        { error_msg: "Rate limit exceeded" },
+        {
+          status: 429,
+          headers: { "X-Second-RateLimit-Reset": "1" },
+        },
+      );
+    }
+    return Response.json({
+      results: [{ entity_id: "interest-coffee", name: "Coffee" }],
+    });
+  };
+
+  const graph = new QlooTasteGraph(
+    "server-only-test-key",
+    "https://hackathon.api.qloo.com",
+    fetcher,
+    0,
+    async (milliseconds) => {
+      delays.push(milliseconds);
+    },
+  );
+
+  const interests = await graph.resolveInterests(["Coffee"]);
+
+  assert.equal(requestCount, 2);
+  assert.deepEqual(delays, [1_000]);
+  assert.deepEqual(interests, [{ id: "interest-coffee", name: "Coffee" }]);
 });
 
 test("workflow rejects an empty ranking instead of presenting a false result", async () => {
