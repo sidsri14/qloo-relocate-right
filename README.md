@@ -2,7 +2,7 @@
 
 RelocateRight is an agentic relocation decision tool for remote-job candidates. It resolves a user's concrete taste signals, resolves candidate destinations, and asks Qloo's Insights API to rank those destinations against the same interest set in one bounded request. The same workflow is available through the web application and a Streamable HTTP MCP tool at `/mcp`.
 
-This repository is currently a local pre-key scaffold. `QLOO_USE_MOCK=true` exists only for interface and workflow testing. Mock scores are labeled as fixtures in both the API response and UI and must not be used as Qloo evidence in a submission.
+The Qloo adapter has been contract-verified against the official hackathon host. `QLOO_USE_MOCK=true` remains available only for local interface and workflow testing. Mock scores are labeled as fixtures in both the API response and UI and must not be used as Qloo evidence in a submission.
 
 ![RelocateRight running with clearly labeled mock fixtures](./relocate-right-mock.png)
 
@@ -58,12 +58,24 @@ Set `QLOO_API_KEY` only in the server or hosting provider's secret store.
 
 The key is sent only in the server-side `X-Api-Key` header to `https://hackathon.api.qloo.com`. It is never returned to the browser. Qloo response data must not be committed to the public repository.
 
+To verify the live contract without storing response data, provide the key only
+for the command process:
+
+```powershell
+$env:QLOO_API_KEY='your-hackathon-key'
+npm run verify:live
+Remove-Item Env:QLOO_API_KEY
+```
+
+The verifier prints only source, counts, ranked city names, and the bounded
+workflow trace. It never prints the key or writes the Qloo response to disk.
+
 ## Status
 
 - Deterministic mock workflow: implemented.
 - Qloo API adapter: implemented against the official hackathon host and documented endpoints.
 - Streamable HTTP MCP tool: implemented and covered by an in-process protocol test.
-- Live-key contract verification: pending key issuance.
+- Live-key contract verification: passed on October 14, 2026 against `/search` and `/v2/insights`.
 - Devpost registration: completed on October 11, 2026.
 - Public MIT repository: https://github.com/sidsri14/qloo-relocate-right
 - GitHub Actions: tests, strict typecheck, and production build pass on Node.js 22 and 24.

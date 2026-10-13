@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "test": "tsx --test test/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verify:live": "tsx scripts/verify-live.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.3.1",
